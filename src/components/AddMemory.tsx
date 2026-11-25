@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { makeId, today, validDate } from "../data/domain";
 import { compressImage } from "../data/images";
+import { POINTS } from "../data/pointsService";
 import { samples } from "../data/samples";
 import type { Memory } from "../types";
 import Modal from "./Modal";
 
-export default function AddMemory({ onClose, onSave, busy }: { onClose: () => void; onSave: (memory: Memory) => Promise<void>; busy: boolean }) {
+export default function AddMemory({ onClose, onSave, busy, pointsEnabled = false }: { onClose: () => void; onSave: (memory: Memory) => Promise<void>; busy: boolean; pointsEnabled?: boolean }) {
   const [photo, setPhoto] = useState("");
   const [date, setDate] = useState(today);
   const [location, setLocation] = useState("");
@@ -45,6 +46,7 @@ export default function AddMemory({ onClose, onSave, busy }: { onClose: () => vo
       <label className="pr-field">FECHA<input type="date" value={date} onChange={(event) => setDate(event.target.value)} required /></label>
       <label className="pr-field">UBICACIÓN<input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="¿Dónde ocurrió?" required /></label>
       <label className="pr-field">TU NOTA<textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Escribe algo que quieras recordar..." required /></label>
+      {pointsEnabled && <p className="pr-helper">🪙 Al guardar este recuerdo: +{POINTS.MEMORY} puntos compartidos.</p>}
       <button className="pr-button" disabled={busy || processing}>{busy ? "Guardando..." : "♡  Guardar recuerdo"}</button>
     </form>
   </Modal>;

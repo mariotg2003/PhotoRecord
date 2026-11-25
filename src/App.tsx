@@ -16,6 +16,7 @@ const emptyState: PhotoRecordState = { albums: {}, memories: [] };
 
 export default function App({ storage = repository, points, onSignOut }: { storage?: PhotoRecordRepository; points?: PointsService; onSignOut?: () => void }) {
   const [balance, setBalance] = useState<number | null>(null);
+  const [pointsNotice, setPointsNotice] = useState<{ message: string; error: boolean } | null>(null);
   const [data, setData] = useState<PhotoRecordState>(emptyState);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -40,7 +41,8 @@ export default function App({ storage = repository, points, onSignOut }: { stora
   useEffect(() => {
     if (!points) return;
     let active = true;
-    points.getBalance().then((value) => { if (active) setBalance(value); }).catch(() => undefined);
+    points.getBalance().then((value) => { if (active) setBalance(value); })
+      .catch((reason: unknown) => { if (active) setPointsNotice({ message: `No se pudo cargar el saldo compartido: ${String(reason)}`, error: true }); });
     return () => { active = false; };
   }, [points]);
 
@@ -51,12 +53,16 @@ export default function App({ storage = repository, points, onSignOut }: { stora
     finally { saving.current = false; setBusy(false); }
   }
   async function saveMemory(memory: Memory) {
+    setPointsNotice(null);
     await persist(addMemory(data, memory));
     if (!points) return;
-    // El recuerdo ya está guardado: un fallo al sumar puntos no debe hacerlo fallar.
+    const earned = memory.collage ? POINTS.COLLAGE : POINTS.MEMORY;
     try {
-      setBalance(await points.earn(memory.collage ? POINTS.COLLAGE : POINTS.MEMORY, memory.collage ? "Collage creado" : "Recuerdo guardado"));
-    } catch { /* se reintentará al refrescar el saldo */ }
+      setBalance(await points.earn(earned, memory.collage ? "Collage creado" : "Recuerdo guardado"));
+      setPointsNotice({ message: `¡Sumáis ${earned} puntos al bote compartido!`, error: false });
+    } catch (reason) {
+      setPointsNotice({ message: `El ${memory.collage ? "collage" : "recuerdo"} se ha guardado, pero no se pudo confirmar la suma de puntos. Consulta el historial antes de volver a intentarlo. ${String(reason)}`, error: true });
+    }
   }
   async function saveAlbum(album: Album) { await persist({ ...data, albums: { ...data.albums, [album.id]: album } }); }
   const ready = !loading && !loadError;
@@ -72,6 +78,9 @@ export default function App({ storage = repository, points, onSignOut }: { stora
       </header>
       <main className="pr-content">
         <div className="pr-content-inner">
+        {pointsNotice && <div className={pointsNotice.error ? "pr-error" : "pr-points-notice"} role={pointsNotice.error ? "alert" : "status"}>
+          {pointsNotice.message} <button type="button" onClick={() => setPointsNotice(null)} aria-label="Cerrar aviso">✕</button>
+        </div>}
         {loading ? <p className="pr-helper pr-status">Cargando tus recuerdos...</p> : loadError ?
           <div className="pr-status"><p className="pr-error" role="alert">{loadError}</p><p className="pr-helper">No se modificarán los datos existentes. Reinicia la aplicación para volver a intentarlo.</p></div> : <>
             {screen === "home" && <>
@@ -112,8 +121,8 @@ export default function App({ storage = repository, points, onSignOut }: { stora
         <button type="button" className="pr-nav-add" aria-label="Añadir recuerdo" disabled={!ready} onClick={() => setModal("add")}><span className="pr-nav-add-symbol" aria-hidden="true">＋</span><span className="pr-nav-add-label" aria-hidden="true">Añadir recuerdo</span></button>
         <button type="button" className={screen === "albums" ? "pr-active" : ""} aria-current={screen === "albums" ? "page" : undefined} onClick={() => setScreen("albums")}><span>▤</span>Álbumes</button>
       </nav>
-      {modal === "add" && <AddMemory busy={busy} onClose={() => setModal(null)} onSave={saveMemory} />}
-      {modal === "collage" && <CollageEditor busy={busy} onClose={() => setModal(null)} memories={data.memories} onSave={saveMemory} />}
+      {modal === "add" && <AddMemory busy={busy} pointsEnabled={!!points} onClose={() => setModal(null)} onSave={saveMemory} />}
+      {modal === "collage" && <CollageEditor busy={busy} pointsEnabled={!!points} onClose={() => setModal(null)} memories={data.memories} onSave={saveMemory} />}
       {modal === "rewards" && points && <RewardsModal service={points} balance={balance} onBalance={setBalance} onClose={() => setModal(null)} />}
       {editing && <OrganizeAlbum album={editing} memories={data.memories} busy={busy} onClose={() => setEditing(null)} onSave={saveAlbum} />}
       {detail && <Modal title="Un momento especial" subtitle={monthName(detail.date.slice(0, 7))} onClose={() => setDetail(null)}>

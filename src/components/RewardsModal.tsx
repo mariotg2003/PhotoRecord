@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { PointsService, Reward } from "../data/pointsService";
+import { POINTS, type PointsService, type Reward } from "../data/pointsService";
 import CreateRewardModal from "./CreateRewardModal";
 import Modal from "./Modal";
 
@@ -47,7 +47,7 @@ export default function RewardsModal({ service, balance, onBalance, onClose }: P
           <div><strong>{reward.title}</strong>{reward.description && <p className="pr-helper">{reward.description}</p>}</div>
           {reward.status === "AVAILABLE"
             ? <button type="button" className="pr-button" disabled={busyId !== null || balance === null || balance < reward.pointsCost} onClick={() => void run(reward.id, () => service.redeem(reward.id))}>Canjear Plan (-{reward.pointsCost} pts)</button>
-            : <button type="button" className="pr-button" disabled={busyId !== null} onClick={() => void run(reward.id, () => service.complete(reward.id))}>Marcar como completado ✔️</button>}
+            : <button type="button" className="pr-button" disabled={busyId !== null} onClick={() => void run(reward.id, () => service.complete(reward.id))}>Marcar como completado (+{POINTS.COMPLETED_REWARD} pts) ✔️</button>}
         </li>)}</ul>
         <button type="button" className="pr-button" onClick={() => setCreating(true)}>＋ Nueva recompensa</button>
       </div>

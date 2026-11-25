@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { makeId, today } from "../data/domain";
+import { POINTS } from "../data/pointsService";
 import type { Collage, CollageAlign, CollageFont, CollageLayout, CollagePattern, Memory } from "../types";
 import { CollageImage } from "./MemoryImage";
 import Modal from "./Modal";
@@ -17,7 +18,7 @@ function Choice<T extends string>({ label, value, options, onChange }: { label: 
   }}>{options.map(([key, title]) => <option value={key} key={key}>{title}</option>)}</select></label>;
 }
 
-export default function CollageEditor({ memories, onClose, onSave, busy }: { memories: Memory[]; onClose: () => void; onSave: (memory: Memory) => Promise<void>; busy: boolean }) {
+export default function CollageEditor({ memories, onClose, onSave, busy, pointsEnabled = false }: { memories: Memory[]; onClose: () => void; onSave: (memory: Memory) => Promise<void>; busy: boolean; pointsEnabled?: boolean }) {
   const [config, setConfig] = useState<Collage>({
     photoIds: [], layout: "grid", text: "", font: "handwriting", align: "center",
     textColor: "#ffffff", fontSize: 22, background: "#f7dfe2", pattern: "none", gap: 8, radius: 8, frame: "#ffffff"
@@ -69,6 +70,7 @@ export default function CollageEditor({ memories, onClose, onSave, busy }: { mem
       </div>
       <label className="pr-field">UBICACIÓN<input value={location} onChange={(event) => setLocation(event.target.value)} required /></label>
       <label className="pr-field">NOTA<input value={note} onChange={(event) => setNote(event.target.value)} placeholder="Una nota para tu collage..." /></label>
+      {pointsEnabled && <p className="pr-helper">🪙 Al guardar este collage: +{POINTS.COLLAGE} puntos compartidos (no se suman también los del recuerdo).</p>}
       <button className="pr-button" disabled={busy || config.photoIds.length < 2}>{busy ? "Guardando..." : "Guardar collage"}</button>
     </form>
   </Modal>;

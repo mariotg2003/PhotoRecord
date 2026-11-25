@@ -45,6 +45,9 @@ alter table public.members enable row level security;
 alter table public.albums enable row level security;
 alter table public.memories enable row level security;
 
+drop policy if exists "members read members" on public.members;
+drop policy if exists "members all albums" on public.albums;
+drop policy if exists "members all memories" on public.memories;
 create policy "members read members" on public.members for select to authenticated using (public.is_member());
 create policy "members all albums" on public.albums for all to authenticated using (public.is_member()) with check (public.is_member());
 create policy "members all memories" on public.memories for all to authenticated using (public.is_member()) with check (public.is_member());
@@ -60,6 +63,9 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values ('photos', 'photos', false, 2097152, array['image/webp','image/jpeg'])
 on conflict (id) do nothing;
 
+drop policy if exists "members read photos" on storage.objects;
+drop policy if exists "members upload photos" on storage.objects;
+drop policy if exists "members delete photos" on storage.objects;
 create policy "members read photos" on storage.objects for select to authenticated
   using (bucket_id = 'photos' and public.is_member());
 create policy "members upload photos" on storage.objects for insert to authenticated
@@ -105,6 +111,10 @@ alter table public.point_transactions enable row level security;
 alter table public.rewards enable row level security;
 
 -- Lectura para miembros; los saldos y canjes solo cambian mediante las funciones de abajo
+drop policy if exists "members read shared_points" on public.shared_points;
+drop policy if exists "members read point_transactions" on public.point_transactions;
+drop policy if exists "members read rewards" on public.rewards;
+drop policy if exists "members insert rewards" on public.rewards;
 create policy "members read shared_points" on public.shared_points for select to authenticated using (public.is_member());
 create policy "members read point_transactions" on public.point_transactions for select to authenticated using (public.is_member());
 create policy "members read rewards" on public.rewards for select to authenticated using (public.is_member());

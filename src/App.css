@@ -186,3 +186,8 @@
 .pr-reward { display: grid; grid-template-columns: auto 1fr; gap: 10px 12px; align-items: center; padding: 12px; border-radius: 16px; background: #f5eeeb; }
 .pr-reward .pr-button { grid-column: 1 / -1; }
 .pr-reward-icon { font-size: 28px; }
+.pr-points-guide { margin: 10px 0; }
+.pr-points-guide li b { white-space: nowrap; }
+.pr-points-guide + .pr-helper { margin-bottom: 8px; }
+.pr-points-notice { padding: 12px; border-radius: 12px; color: #2f7d4f; background: #e8f4ec; font-size: 12px; line-height: 1.5; }
+.pr-points-notice button, .pr-content-inner > .pr-error button { float: right; border: 0; background: transparent; color: inherit; cursor: pointer; }

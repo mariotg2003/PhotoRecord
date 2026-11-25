@@ -11,7 +11,7 @@ export type Reward = {
 export type PointTransaction = { id: string; amount: number; reason: string; type: TransactionType; createdAt: string };
 export type NewReward = { title: string; description?: string; pointsCost: number; tier: RewardTier; icon: string };
 
-export const POINTS = { MEMORY: 10, COLLAGE: 15 } as const;
+export const POINTS = { MEMORY: 10, COLLAGE: 15, COMPLETED_REWARD: 20 } as const;
 
 export interface PointsService {
   getBalance(): Promise<number>;
