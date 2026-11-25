@@ -11,7 +11,7 @@ import type { Album, AlbumWithMemories, Memory, PhotoRecordState } from "./types
 
 const emptyState: PhotoRecordState = { albums: {}, memories: [] };
 
-export default function App({ storage = repository }: { storage?: PhotoRecordRepository }) {
+export default function App({ storage = repository, onSignOut }: { storage?: PhotoRecordRepository; onSignOut?: () => void }) {
   const [data, setData] = useState<PhotoRecordState>(emptyState);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -49,6 +49,7 @@ export default function App({ storage = repository }: { storage?: PhotoRecordRep
         <div className="pr-brand-icon" aria-hidden="true">▣</div>
         <div className="pr-brand"><strong>PhotoRecord</strong><small>TU DIARIO DE MOMENTOS</small></div>
         <button type="button" className="pr-icon-button" aria-label="Crear collage" disabled={!ready} onClick={() => setModal("collage")}>✧</button>
+        {onSignOut && <button type="button" className="pr-icon-button" aria-label="Cerrar sesión" onClick={onSignOut}>⏻</button>}
       </header>
       <main className="pr-content">
         <div className="pr-content-inner">

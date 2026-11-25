@@ -36,3 +36,10 @@ El componente `App` acepta opcionalmente un `PhotoRecordRepository` con los mét
 El formato y la clave de almacenamiento web de la versión Expo anterior se mantienen, pero `localStorage` pertenece a cada origen (protocolo, dominio y puerto). Si Vite se sirve desde otro origen, o al incluirlo en un WebView de WorkPanel, no verá automáticamente esos datos; hay que migrarlos explícitamente. Los datos nativos de Expo tampoco se migran de forma automática. El prototipo HTML utiliza otro formato y no se importa.
 
 La aplicación todavía **no está integrada** en WorkPanel de escritorio ni en WorkPanel Android. Compartir los componentes con ambos requiere incorporarlos a sus compilaciones, importar sus estilos y conectar un repositorio apropiado para cada plataforma. Las rutas de almacenamiento y el origen del WebView deben decidirse antes de migrar datos; una integración no comparte por sí sola el almacenamiento entre aplicaciones.
+
+## Supabase (login + base de datos)
+
+1. En Supabase: Authentication > Providers > Email, desactiva el registro libre y crea los dos usuarios a mano.
+2. Ejecuta [supabase/schema.sql](./supabase/schema.sql) en el SQL Editor y añade los dos usuarios a `members` (último bloque del archivo).
+3. Copia `.env.example` a `.env` con la URL del proyecto y la clave `anon` (Project Settings > API). Nunca pongas la contraseña de la base de datos ni la `service_role` en el frontend.
+4. Las fotos se convierten a WebP en el navegador (máx. 1000 px) y se guardan en el bucket privado `photos`.

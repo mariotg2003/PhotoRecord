@@ -12,7 +12,8 @@ export async function compressImage(file: File): Promise<string> {
     const context = canvas.getContext("2d");
     if (!context) throw new Error("No se pudo procesar la imagen.");
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", 0.7);
+    const webp = canvas.toDataURL("image/webp", 0.75);
+    return webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/jpeg", 0.7);
   } finally {
     URL.revokeObjectURL(url);
   }
