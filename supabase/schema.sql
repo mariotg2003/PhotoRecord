@@ -49,6 +49,12 @@ create policy "members read members" on public.members for select to authenticat
 create policy "members all albums" on public.albums for all to authenticated using (public.is_member()) with check (public.is_member());
 create policy "members all memories" on public.memories for all to authenticated using (public.is_member()) with check (public.is_member());
 
+-- Permisos de tabla para el rol de la API (RLS decide después quién ve qué)
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.albums, public.memories to authenticated;
+grant select on public.members to authenticated;
+grant execute on function public.is_member() to authenticated;
+
 -- 4) Bucket privado para las fotos WebP
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('photos', 'photos', false, 2097152, array['image/webp','image/jpeg'])

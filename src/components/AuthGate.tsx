@@ -15,7 +15,7 @@ function Login() {
     if (!supabase) return;
     setBusy(true); setError("");
     const { error: failure } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    if (failure) setError("Correo o contraseña incorrectos.");
+    if (failure) setError(failure.code === "invalid_credentials" ? "Correo o contraseña incorrectos." : `No se pudo entrar: ${failure.message}`);
     setBusy(false);
   }
 
