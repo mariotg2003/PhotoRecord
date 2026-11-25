@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhotoRecord</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      overflow-x: hidden;
+    }
+
+    .font-handwriting {
+      font-family: 'Caveat', cursive;
+    }
+
+    .font-serif-display {
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    /* Marco vertical móvil en escritorio y pantalla completa en móvil */
+    @media (min-width: 640px) {
+      .desktop-stage {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+        background: radial-gradient(circle at top, #ffe4e6 0%, #f1f5f9 55%, #e2e8f0 100%);
+      }
+
+      .phone-shell {
+        width: 100%;
+        max-width: 420px;
+        height: min(880px, 92vh);
+        border-radius: 36px;
+        box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.25), 0 0 0 8px #ffffff, 0 0 0 9px #cbd5e1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        position: relative;
+      }
+    }
+
+    @media (max-width: 639px) {
+      .desktop-stage {
+        min-height: 100dvh;
+        width: 100%;
+        background: #ffffff;
+      }
+
+      .phone-shell {
+        width: 100%;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        position: relative;
+      }
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.45);
+      border-radius: 9999px;
+    }
+
+    /* Patrones decorativos de fondo para collages */
+    .pattern-hearts {
+      background-image: radial-gradient(rgba(244, 63, 94, 0.22) 1.5px, transparent 1.5px),
+                        radial-gradient(rgba(251, 113, 133, 0.16) 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+      background-position: 0 0, 12px 12px;
+    }
+
+    .pattern-stars {
+      background-image: radial-gradient(circle, rgba(251, 191, 36, 0.35) 1.6px, transparent 1.6px),
+                        radial-gradient(circle, rgba(168, 85, 247, 0.2) 1.2px, transparent 1.2px);
+      background-size: 28px 28px;
+      background-position: 0 0, 14px 14px;
+    }
+
+    .pattern-dots {
+      background-image: radial-gradient(rgba(15, 23, 42, 0.14) 1.4px, transparent 1.4px);
+      background-size: 16px 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="desktop-stage">
+    <div id="app" class="phone-shell">
+      <!-- 1. CABECERA Y MENÚ HAMBURGUESA -->
+      <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-100 px-4 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-rose-500 text-white flex items-center justify-center shadow-sm shadow-rose-500/30">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+          </div>
+          <h1 class="text-lg font-extrabold tracking-tight text-slate-900">PhotoRecord 📷</h1>
+        </div>
+
+        <div class="relative">
+          <button
+            id="menuButton"
+            type="button"
+            aria-label="Abrir menú"
+            aria-expanded="false"
+            class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-95 transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+
+          <!-- Menú desplegable -->
+          <div
+            id="dropdownMenu"
+            class="hidden absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-40"
+          >
+            <button
+              id="openCollageMenuBtn"
+              type="button"
+              class="w-full px-3.5 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-rose-50 hover:text-rose-600 flex items-center gap-2.5 transition"
+            >
+              <span class="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">⊞</span>
+              <span>Crear Collage</span>
+            </button>
+            <button
+              id="openOrganizeMenuBtn"
+              type="button"
+              class="w-full px-3.5 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition"
+            >
+              <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold">✎</span>
+              <span>Organizar Álbumes</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- CONTENIDO PRINCIPAL -->
+      <main class="flex-1 overflow-y-auto custom-scroll px-4 py-4 space-y-5 bg-slate-50/70">
+        <!-- Mensaje de notificación no intrusivo -->
+        <div id="toastBanner" class="hidden rounded-2xl px-3.5 py-2.5 text-xs font-semibold border shadow-sm"></div>
+
+        <!-- Botón prominente + Añadir Recuerdo -->
+        <button
+          id="openAddMemoryBtn"
+          type="button"
+          class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 active:scale-[0.99] text-white font-bold text-sm shadow-lg shadow-rose-500/25 flex items-center justify-center gap-2 transition"
+        >
+          <span class="text-lg leading-none">+</span>
+          <span>Añadir Recuerdo</span>
+        </button>
+
+        <!-- 2. MURO MENSUAL / ÁLBUMES -->
+        <section id="albumsFeed" class="space-y-5 pb-6"></section>
+      </main>
+    </div>
+  </div>
+
+  <!-- 3. MODAL AÑADIR RECUERDO (CON COMPRESIÓN WEBP EN CLIENTE) -->
+  <div id="addMemoryModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[92dvh] overflow-y-auto custom-scroll space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900">Añadir Recuerdo</h2>
+          <p class="text-[11px] text-slate-500">Optimización automática a WebP antes de guardar</p>
+        </div>
+        <button id="closeAddMemoryBtn" type="button" aria-label="Cerrar modal" class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 font-bold">✕</button>
+      </div>
+
+      <form id="addMemoryForm" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Subir foto desde dispositivo</label>
+          <input
+            id="memoryFileInput"
+            type="file"
+            accept="image/*"
+            class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100 cursor-pointer"
+          />
+          <p id="compressionInfoText" class="hidden mt-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-1.5"></p>
+        </div>
+
+        <div>
+          <span class="block text-[11px] font-semibold text-slate-400 mb-1.5">O elige una foto de ejemplo:</span>
+          <div id="samplePhotosGrid" class="grid grid-cols-4 gap-2"></div>
+        </div>
+
+        <div class="w-full h-44 rounded-2xl bg-slate-100 border border-dashed border-slate-300 overflow-hidden flex items-center justify-center">
+          <img id="memoryPreviewImg" src="" alt="Vista previa del recuerdo" class="hidden w-full h-full object-cover" />
+          <span id="memoryPreviewPlaceholder" class="text-xs text-slate-400 font-medium px-4 text-center">Selecciona una foto para previsualizarla</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="memoryDateInput" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Fecha / Álbum</label>
+            <input
+              id="memoryDateInput"
+              type="date"
+              required
+              class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+            />
+          </div>
+          <div>
+            <label for="memoryLocationInput" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Ubicación</label>
+            <input
+              id="memoryLocationInput"
+              type="text"
+              required
+              placeholder="Ej. Parque María Luisa"
+              class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="memoryNoteInput" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Nota</label>
+          <textarea
+            id="memoryNoteInput"
+            rows="3"
+            required
+            placeholder="Escribe una nota especial de este recuerdo..."
+            class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none"
+          ></textarea>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-md transition"
+        >
+          Guardar Recuerdo
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. MODAL DETALLE DEL RECUERDO -->
+  <div id="detailModal" class="hidden fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-[2px] flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
+      <div class="relative w-full aspect-square bg-slate-900">
+        <img id="detailPhotoImg" src="" alt="Detalle de recuerdo" class="w-full h-full object-cover" />
+
+        <button
+          id="closeDetailBtn"
+          type="button"
+          aria-label="Cerrar detalle"
+          class="absolute top-3 left-3 w-9 h-9 rounded-full bg-slate-900/65 text-white hover:bg-slate-900/85 flex items-center justify-center text-sm font-bold backdrop-blur-sm transition"
+        >
+          ✕
+        </button>
+
+        <div
+          id="detailLocationBadge"
+          class="absolute top-3 right-3 max-w-[68%] px-3 py-1.5 rounded-full bg-white/95 text-slate-900 text-xs font-bold shadow-md backdrop-blur-sm flex items-center gap-1.5 truncate"
+        >
+          <span>📍</span>
+          <span id="detailLocationText" class="truncate"></span>
+        </div>
+      </div>
+
+      <div class="p-5 space-y-2 bg-white">
+        <div class="flex items-center justify-between text-[11px] font-semibold text-slate-400">
+          <span id="detailAlbumLabel"></span>
+          <span id="detailDateText"></span>
+        </div>
+        <p id="detailNoteText" class="text-sm text-slate-700 leading-relaxed"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. EDITOR DE COLLAGES PERSONALIZABLE -->
+  <div id="collageModal" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[94dvh] overflow-y-auto custom-scroll space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900">Editor de Collage</h2>
+          <p class="text-[11px] text-slate-500">Elige 2+ fotos, diseño, texto, fondo y bordes</p>
+        </div>
+        <button id="closeCollageBtn" type="button" aria-label="Cerrar editor de collage" class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 font-bold">✕</button>
+      </div>
+
+      <!-- Vista previa en vivo -->
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Vista previa en vivo</span>
+          <span id="collageSelectedCount" class="text-xs font-bold text-rose-600">0 fotos</span>
+        </div>
+
+        <div id="collageCanvasStage" class="relative w-full aspect-square rounded-2xl overflow-hidden border border-slate-200 shadow-inner flex items-center justify-center transition-all">
+          <div id="collagePatternLayer" class="pointer-events-none absolute inset-0 z-10"></div>
+          <div id="collagePhotosLayer" class="relative z-0 w-full h-full"></div>
+          <div id="collageTextOverlay" class="pointer-events-none hidden absolute inset-x-0 z-20 px-4 py-2 transition-all"></div>
+          <p id="collageEmptyHint" class="relative z-20 text-xs text-slate-500 font-medium text-center px-6 bg-white/80 py-2 rounded-xl">
+            Selecciona 2 o más fotos abajo para previsualizar tu collage.
+          </p>
+        </div>
+      </div>
+
+      <!-- Selector de fotos del muro -->
+      <div>
+        <span class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">1. Seleccionar fotos (mínimo 2)</span>
+        <div id="collagePhotosPicker" class="grid grid-cols-4 gap-2 max-h-36 overflow-y-auto custom-scroll p-0.5"></div>
+      </div>
+
+      <!-- Diseños predefinidos -->
+      <div>
+        <label for="collageLayoutSelect" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">2. Diseño / Cuadrícula</label>
+        <select
+          id="collageLayoutSelect"
+          class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+        >
+          <option value="grid-2x2">2x2 Clásico</option>
+          <option value="col-1x2">1x2 Vertical</option>
+          <option value="row-1x2">1x2 Horizontal</option>
+          <option value="magazine-3">3 Fotos Revista</option>
+          <option value="polaroid-tape">Polaroid Cinta</option>
+          <option value="scrapbook-free">Scrapbook Libre</option>
+        </select>
+      </div>
+
+      <!-- Texto superpuesto y tipografía -->
+      <div class="rounded-2xl bg-slate-50 border border-slate-200 p-3 space-y-2.5">
+        <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-600">3. Texto personalizado</span>
+        <input
+          id="collageOverlayTextInput"
+          type="text"
+          placeholder="Ej. Nuestro fin de semana favorito ❤️"
+          class="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+        />
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="collageFontSelect" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Tipografía</label>
+            <select id="collageFontSelect" class="w-full px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-800">
+              <option value="handwriting">Manuscrita</option>
+              <option value="sans">Sans</option>
+              <option value="serif">Serif</option>
+            </select>
+          </div>
+          <div>
+            <label for="collageAlignSelect" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Alineación</label>
+            <select id="collageAlignSelect" class="w-full px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-800">
+              <option value="center">Centrado</option>
+              <option value="left">Izquierda</option>
+              <option value="right">Derecha</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 items-center">
+          <div>
+            <label for="collageTextColorInput" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Color de texto</label>
+            <input id="collageTextColorInput" type="color" value="#ffffff" class="w-full h-8 rounded-lg border border-slate-200 bg-white cursor-pointer" />
+          </div>
+          <div>
+            <label for="collageFontSizeRange" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+              Tamaño: <span id="collageFontSizeLabel">22px</span>
+            </label>
+            <input id="collageFontSizeRange" type="range" min="14" max="36" value="22" class="w-full accent-rose-600 cursor-pointer" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Fondo y patrones -->
+      <div class="rounded-2xl bg-slate-50 border border-slate-200 p-3 space-y-2.5">
+        <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-600">4. Fondo y patrón</span>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="collageBgStyleSelect" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Estilo de fondo</label>
+            <select id="collageBgStyleSelect" class="w-full px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-800">
+              <option value="solid-white">Blanco sólido</option>
+              <option value="solid-blush">Rosa pastel sólido</option>
+              <option value="solid-midnight">Noche elegante sólido</option>
+              <option value="grad-sunset">Degradado atardecer</option>
+              <option value="grad-romantic">Degradado romántico</option>
+              <option value="grad-ocean">Degradado océano</option>
+            </select>
+          </div>
+          <div>
+            <label for="collagePatternSelect" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Patrón decorativo</label>
+            <select id="collagePatternSelect" class="w-full px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-800">
+              <option value="none">Sin patrón</option>
+              <option value="hearts">Corazones</option>
+              <option value="stars">Estrellas</option>
+              <option value="dots">Puntos</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Espaciado, redondeo y color de marco -->
+      <div class="rounded-2xl bg-slate-50 border border-slate-200 p-3 space-y-2.5">
+        <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-600">5. Separación, bordes y marco</span>
+        <div class="grid grid-cols-3 gap-2 items-center">
+          <div>
+            <label for="collageGapRange" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+              Espacio: <span id="collageGapLabel">8px</span>
+            </label>
+            <input id="collageGapRange" type="range" min="0" max="24" value="8" class="w-full accent-rose-600 cursor-pointer" />
+          </div>
+          <div>
+            <label for="collageRadiusRange" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+              Borde: <span id="collageRadiusLabel">12px</span>
+            </label>
+            <input id="collageRadiusRange" type="range" min="0" max="28" value="12" class="w-full accent-rose-600 cursor-pointer" />
+          </div>
+          <div>
+            <label for="collageFrameColorInput" class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Marco</label>
+            <input id="collageFrameColorInput" type="color" value="#ffffff" class="w-full h-8 rounded-lg border border-slate-200 bg-white cursor-pointer" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Metadatos para guardar en el muro -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="collageLocationInput" class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Ubicación</label>
+          <input
+            id="collageLocationInput"
+            type="text"
+            value="Collage Especial"
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+          />
+        </div>
+        <div>
+          <label for="collageNoteInput" class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Nota del recuerdo</label>
+          <input
+            id="collageNoteInput"
+            type="text"
+            placeholder="Detalle para el muro..."
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+          />
+        </div>
+      </div>
+
+      <button
+        id="saveCollageBtn"
+        type="button"
+        disabled
+        class="w-full py-3 rounded-2xl bg-slate-300 text-white font-bold text-sm transition cursor-not-allowed"
+      >
+        Guardar Collage
+      </button>
+    </div>
+  </div>
+
+  <!-- 6. MODAL ORGANIZAR ÁLBUMES -->
+  <div id="organizeModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[92dvh] overflow-y-auto custom-scroll space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900">Organizar Álbumes</h2>
+          <p class="text-[11px] text-slate-500">Personaliza título, emoji, color, portada y destacados</p>
+        </div>
+        <button id="closeOrganizeBtn" type="button" aria-label="Cerrar organizar álbumes" class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 font-bold">✕</button>
+      </div>
+
+      <form id="organizeForm" class="space-y-3.5">
+        <div>
+          <label for="organizeAlbumSelect" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Seleccionar álbum / mes</label>
+          <select
+            id="organizeAlbumSelect"
+            class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+          ></select>
+        </div>
+
+        <div>
+          <label for="organizeNameInput" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Nombre del álbum</label>
+          <input
+            id="organizeNameInput"
+            type="text"
+            required
+            class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="organizeColorSelect" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Color temático</label>
+            <select
+              id="organizeColorSelect"
+              class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+            >
+              <option value="rose">Rose (Rosa)</option>
+              <option value="sky">Sky (Cielo)</option>
+              <option value="amber">Amber (Ámbar)</option>
+              <option value="violet">Violet (Violeta)</option>
+              <option value="emerald">Emerald (Esmeralda)</option>
+              <option value="slate">Slate (Pizarra)</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="organizeEmojiSelect" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Emoji / Icono</label>
+            <select
+              id="organizeEmojiSelect"
+              class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+            >
+              <option value="📷">📷 Cámara</option>
+              <option value="❤️">❤️ Corazón</option>
+              <option value="✈️">✈️ Viaje</option>
+              <option value="🎄">🎄 Navidad</option>
+              <option value="✨">✨ Especial</option>
+              <option value="🌸">🌸 Primavera</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="organizeDescInput" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Nota / Descripción del álbum</label>
+          <input
+            id="organizeDescInput"
+            type="text"
+            placeholder="Escribe una nota especial para este mes..."
+            class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+          />
+        </div>
+
+        <div>
+          <span class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Foto de portada</span>
+          <div id="organizeCoverPicker" class="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto custom-scroll p-0.5"></div>
+        </div>
+
+        <label class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200 cursor-pointer">
+          <div>
+            <span class="block text-xs font-bold text-slate-800">Fijar / Destacar álbum</span>
+            <span class="block text-[11px] text-slate-500">Muestra insignia destacada y prioriza en el muro</span>
+          </div>
+          <input
+            id="organizeFavoriteCheckbox"
+            type="checkbox"
+            class="w-4 h-4 accent-rose-600 rounded cursor-pointer"
+          />
+        </label>
+
+        <button
+          type="submit"
+          class="w-full py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-md transition"
+        >
+          Guardar Cambios
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'photorecord_custom_v2';
+
+    const SAMPLE_PHOTOS = [
+      {
+        label: 'Atardecer',
+        url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+        fallback: 'https://placehold.co/600x600/ffe4e6/be123c?text=Atardecer'
+      },
+      {
+        label: 'Café',
+        url: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80',
+        fallback: 'https://placehold.co/600x600/fef3c7/b45309?text=Cafe'
+      },
+      {
+        label: 'Ciudad',
+        url: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=800&q=80',
+        fallback: 'https://placehold.co/600x600/e0f2fe/0369a1?text=Ciudad'
+      },
+      {
+        label: 'Bosque',
+        url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80',
+        fallback: 'https://placehold.co/600x600/dcfce7/15803d?text=Bosque'
+      }
+    ];
+
+    const THEME_STYLES = {
+      rose: {
+        cardBorder: 'border-rose-200',
+        headerBg: 'bg-rose-50/90',
+        badge: 'bg-rose-100 text-rose-700 border-rose-200'
+      },
+      sky: {
+        cardBorder: 'border-sky-200',
+        headerBg: 'bg-sky-50/90',
+        badge: 'bg-sky-100 text-sky-700 border-sky-200'
+      },
+      amber: {
+        cardBorder: 'border-amber-200',
+        headerBg: 'bg-amber-50/90',
+        badge: 'bg-amber-100 text-amber-800 border-amber-200'
+      },
+      violet: {
+        cardBorder: 'border-violet-200',
+        headerBg: 'bg-violet-50/90',
+        badge: 'bg-violet-100 text-violet-700 border-violet-200'
+      },
+      emerald: {
+        cardBorder: 'border-emerald-200',
+        headerBg: 'bg-emerald-50/90',
+        badge: 'bg-emerald-100 text-emerald-700 border-emerald-200'
+      },
+      slate: {
+        cardBorder: 'border-slate-200',
+        headerBg: 'bg-slate-100/90',
+        badge: 'bg-slate-200 text-slate-800 border-slate-300'
+      }
+    };
+
+    const BG_PRESETS = {
+      'solid-white': { css: '#ffffff', canvasFill: '#ffffff', canvasGrad: null },
+      'solid-blush': { css: '#ffe4e6', canvasFill: '#ffe4e6', canvasGrad: null },
+      'solid-midnight': { css: '#0f172a', canvasFill: '#0f172a', canvasGrad: null },
+      'grad-sunset': {
+        css: 'linear-gradient(135deg, #fb7185 0%, #fbbf24 100%)',
+        canvasFill: null,
+        canvasGrad: ['#fb7185', '#fbbf24']
+      },
+      'grad-romantic': {
+        css: 'linear-gradient(135deg, #f43f5e 0%, #c084fc 100%)',
+        canvasFill: null,
+        canvasGrad: ['#f43f5e', '#c084fc']
+      },
+      'grad-ocean': {
+        css: 'linear-gradient(135deg, #38bdf8 0%, #34d399 100%)',
+        canvasFill: null,
+        canvasGrad: ['#38bdf8', '#34d399']
+      }
+    };
+
+    const INITIAL_STATE = {
+      albums: {
+        'Febrero 2025': {
+          name: 'Febrero 2025',
+          color: 'rose',
+          emoji: '❤️',
+          description: 'Paseos de invierno y tardes especiales.',
+          favorite: true,
+          coverPhoto: SAMPLE_PHOTOS[2].url
+        },
+        'Marzo 2025': {
+          name: 'Marzo 2025',
+          color: 'sky',
+          emoji: '✈️',
+          description: 'Primeras escapadas y días soleados.',
+          favorite: false,
+          coverPhoto: SAMPLE_PHOTOS[0].url
+        }
+      },
+      memories: [
+        {
+          id: 'mem-1',
+          albumKey: 'Febrero 2025',
+          date: '2025-02-14',
+          location: 'Plaza de España, Sevilla',
+          note: 'Caminando juntos entre arcos y luces suaves.',
+          photo: SAMPLE_PHOTOS[2].url
+        },
+        {
+          id: 'mem-2',
+          albumKey: 'Febrero 2025',
+          date: '2025-02-22',
+          location: 'Cafetería del Centro',
+          note: 'Un café caliente con calma antes de empezar el día.',
+          photo: SAMPLE_PHOTOS[1].url
+        },
+        {
+          id: 'mem-3',
+          albumKey: 'Marzo 2025',
+          date: '2025-03-08',
+          location: 'Cala del Faro, Cádiz',
+          note: 'Atardecer frente al mar con brisa fresca.',
+          photo: SAMPLE_PHOTOS[0].url
+        },
+        {
+          id: 'mem-4',
+          albumKey: 'Marzo 2025',
+          date: '2025-03-21',
+          location: 'Mirador del Bosque',
+          note: 'Vistas verdes tras una caminata tranquila.',
+          photo: SAMPLE_PHOTOS[3].url
+        }
+      ]
+    };
+
+    let state = loadState();
+    let selectedAddPhotoUrl = SAMPLE_PHOTOS[0].url;
+    let selectedCollageIds = [];
+    let selectedOrganizeCoverUrl = '';
+    let toastTimer = null;
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(INITIAL_STATE);
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.memories) || !parsed.albums) {
+          return structuredClone(INITIAL_STATE);
+        }
+        return parsed;
+      } catch (err) {
+        console.error('Error leyendo localStorage:', err);
+        return structuredClone(INITIAL_STATE);
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        console.error('Error guardando en localStorage:', err);
+        showToast('No se pudo guardar en localStorage (límite de almacenamiento).', 'error');
+      }
+    }
+
+    function showToast(msg, type = 'success') {
+      const banner = document.getElementById('toastBanner');
+      if (!banner) return;
+      clearTimeout(toastTimer);
+      banner.className = 'rounded-2xl px-3.5 py-2.5 text-xs font-semibold border shadow-sm';
+      if (type === 'error') {
+        banner.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
+      } else {
+        banner.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+      }
+      banner.textContent = msg;
+      banner.classList.remove('hidden');
+      toastTimer = setTimeout(() => {
+        banner.classList.add('hidden');
+      }, 3200);
+    }
+
+    function getFallbackUrl(url) {
+      const found = SAMPLE_PHOTOS.find((p) => p.url === url);
+      return found ? found.fallback : 'https://placehold.co/600x600/e2e8f0/334155?text=Recuerdo';
+    }
+
+    function attachImage(imgEl, url) {
+      imgEl.src = url;
+      imgEl.onerror = () => {
+        imgEl.onerror = null;
+        imgEl.src = getFallbackUrl(url);
+      };
+    }
+
+    function formatAlbumKeyFromDate(dateStr) {
+      const parts = (dateStr || '').split('-');
+      if (parts.length !== 3) return 'Recuerdos 2025';
+      const year = parts[0];
+      const idx = parseInt(parts[1], 10) - 1;
+      const monthNames = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+      ];
+      return `${monthNames[idx] || 'Recuerdos'} ${year}`;
+    }
+
+    function ensureAlbum(key, cover = SAMPLE_PHOTOS[0].url) {
+      if (!state.albums[key]) {
+        state.albums[key] = {
+          name: key,
+          color: 'rose',
+          emoji: '📷',
+          description: '',
+          favorite: false,
+          coverPhoto: cover
+        };
+      } else if (!state.albums[key].coverPhoto) {
+        state.albums[key].coverPhoto = cover;
+      }
+    }
+
+    function getAlbumKeys() {
+      const set = new Set([
+        ...Object.keys(state.albums || {}),
+        ...state.memories.map((m) => m.albumKey)
+      ]);
+      set.forEach((k) => ensureAlbum(k));
+      return Array.from(set);
+    }
+
+    // 2. RENDERIZADO DEL MURO MENSUAL / ÁLBUMES
+    function renderFeed() {
+      const feed = document.getElementById('albumsFeed');
+      feed.innerHTML = '';
+
+      const grouped = {};
+      state.memories.forEach((m) => {
+        ensureAlbum(m.albumKey, m.photo);
+        if (!grouped[m.albumKey]) grouped[m.albumKey] = [];
+        grouped[m.albumKey].push(m);
+      });
+
+      const keys = Object.keys(grouped);
+      if (keys.length === 0) {
+        feed.innerHTML = `
+          <div class="bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-1.5">
+            <p class="text-sm font-bold text-slate-800">Sin recuerdos todavía</p>
+            <p class="text-xs text-slate-500">Pulsa "+ Añadir Recuerdo" para empezar vuestro álbum.</p>
+          </div>
+        `;
+        return;
+      }
+
+      keys.sort((a, b) => {
+        const favA = state.albums[a]?.favorite ? 1 : 0;
+        const favB = state.albums[b]?.favorite ? 1 : 0;
+        if (favB !== favA) return favB - favA;
+        const tA = Math.max(...grouped[a].map((m) => new Date(m.date || '2000-01-01').getTime()));
+        const tB = Math.max(...grouped[b].map((m) => new Date(m.date || '2000-01-01').getTime()));
+        return tB - tA;
+      });
+
+      keys.forEach((albumKey) => {
+        const meta = state.albums[albumKey];
+        const theme = THEME_STYLES[meta.color] || THEME_STYLES.rose;
+        const items = [...grouped[albumKey]].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        const coverSrc = meta.coverPhoto || items[0].photo;
+
+        const card = document.createElement('article');
+        card.className = `bg-white rounded-3xl border ${theme.cardBorder} shadow-sm overflow-hidden`;
+
+        const header = document.createElement('div');
+        header.className = `${theme.headerBg} px-4 py-3.5 border-b border-slate-100 flex items-center gap-3`;
+
+        const coverImg = document.createElement('img');
+        coverImg.alt = `Portada ${meta.name}`;
+        coverImg.className = 'w-12 h-12 rounded-2xl object-cover border-2 border-white shadow-sm shrink-0 bg-slate-200';
+        attachImage(coverImg, coverSrc);
+
+        const info = document.createElement('div');
+        info.className = 'min-w-0 flex-1';
+
+        const titleRow = document.createElement('div');
+        titleRow.className = 'flex items-center gap-1.5 flex-wrap';
+
+        const emojiEl = document.createElement('span');
+        emojiEl.className = 'text-base leading-none';
+        emojiEl.textContent = meta.emoji || '📷';
+
+        const titleEl = document.createElement('h2');
+        titleEl.className = 'text-sm font-extrabold text-slate-900 truncate';
+        titleEl.textContent = meta.name || albumKey;
+
+        titleRow.appendChild(emojiEl);
+        titleRow.appendChild(titleEl);
+
+        if (meta.favorite) {
+          const pinBadge = document.createElement('span');
+          pinBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200';
+          pinBadge.textContent = '★ Fijado';
+          titleRow.appendChild(pinBadge);
+        }
+
+        info.appendChild(titleRow);
+
+        if (meta.description) {
+          const descEl = document.createElement('p');
+          descEl.className = 'text-xs text-slate-600 mt-0.5 line-clamp-2';
+          descEl.textContent = meta.description;
+          info.appendChild(descEl);
+        }
+
+        const countBadge = document.createElement('span');
+        countBadge.className = `text-[11px] font-bold px-2.5 py-1 rounded-full border shrink-0 ${theme.badge}`;
+        countBadge.textContent = `${items.length}`;
+
+        header.appendChild(coverImg);
+        header.appendChild(info);
+        header.appendChild(countBadge);
+
+        const grid = document.createElement('div');
+        grid.className = 'p-3.5 grid grid-cols-3 gap-2.5';
+
+        items.forEach((mem) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'group relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500 active:scale-[0.98] transition';
+          btn.setAttribute('aria-label', `Abrir recuerdo ${mem.location}`);
+
+          const img = document.createElement('img');
+          img.alt = mem.location;
+          img.className = 'w-full h-full object-cover group-hover:scale-105 transition duration-200';
+          attachImage(img, mem.photo);
+
+          const bar = document.createElement('div');
+          bar.className = 'absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/75 via-slate-900/20 to-transparent p-1.5 text-left';
+          const loc = document.createElement('span');
+          loc.className = 'block text-[10px] font-semibold text-white truncate';
+          loc.textContent = mem.location;
+          bar.appendChild(loc);
+
+          btn.appendChild(img);
+          btn.appendChild(bar);
+          btn.addEventListener('click', () => openDetailModal(mem));
+          grid.appendChild(btn);
+        });
+
+        card.appendChild(header);
+        card.appendChild(grid);
+        feed.appendChild(card);
+      });
+    }
+
+    // MENÚ HAMBURGUESA
+    const menuButton = document.getElementById('menuButton');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+
+    function closeDropdown() {
+      dropdownMenu.classList.add('hidden');
+      menuButton.setAttribute('aria-expanded', 'false');
+    }
+
+    menuButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = dropdownMenu.classList.contains('hidden');
+      dropdownMenu.classList.toggle('hidden', !willOpen);
+      menuButton.setAttribute('aria-expanded', String(willOpen));
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!dropdownMenu.contains(e.target) && !menuButton.contains(e.target)) {
+        closeDropdown();
+      }
+    });
+
+    // 3. MODAL AÑADIR RECUERDO + COMPRESIÓN WEBP EN CLIENTE
+    const addMemoryModal = document.getElementById('addMemoryModal');
+    const openAddMemoryBtn = document.getElementById('openAddMemoryBtn');
+    const closeAddMemoryBtn = document.getElementById('closeAddMemoryBtn');
+    const addMemoryForm = document.getElementById('addMemoryForm');
+    const memoryFileInput = document.getElementById('memoryFileInput');
+    const compressionInfoText = document.getElementById('compressionInfoText');
+    const samplePhotosGrid = document.getElementById('samplePhotosGrid');
+    const memoryPreviewImg = document.getElementById('memoryPreviewImg');
+    const memoryPreviewPlaceholder = document.getElementById('memoryPreviewPlaceholder');
+    const memoryDateInput = document.getElementById('memoryDateInput');
+    const memoryLocationInput = document.getElementById('memoryLocationInput');
+    const memoryNoteInput = document.getElementById('memoryNoteInput');
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes <= 0) return '0 KB';
+      const kb = bytes / 1024;
+      if (kb < 1024) return `${Math.round(kb)} KB`;
+      return `${(kb / 1024).toFixed(2)} MB`;
+    }
+
+    function compressImageToWebP(file, maxDim = 1280, quality = 0.8) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onerror = () => reject(new Error('Formato de imagen no soportado.'));
+          img.onload = () => {
+            try {
+              let width = img.naturalWidth || img.width;
+              let height = img.naturalHeight || img.height;
+
+              if (width > maxDim || height > maxDim) {
+                if (width >= height) {
+                  height = Math.round((height * maxDim) / width);
+                  width = maxDim;
+                } else {
+                  width = Math.round((width * maxDim) / height);
+                  height = maxDim;
+                }
+              }
+
+              const canvas = document.createElement('canvas');
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+
+              let webpDataUrl = canvas.toDataURL('image/webp', quality);
+              if (!webpDataUrl.startsWith('data:image/webp')) {
+                webpDataUrl = canvas.toDataURL('image/jpeg', quality);
+              }
+
+              const approxBytes = Math.round((webpDataUrl.length * 3) / 4);
+              const originalBytes = file.size || approxBytes;
+              const savedPct = originalBytes > 0
+                ? Math.max(0, Math.round(((originalBytes - approxBytes) / originalBytes) * 100))
+                : 0;
+
+              resolve({
+                dataUrl: webpDataUrl,
+                originalBytes,
+                approxBytes,
+                savedPct
+              });
+            } catch (err) {
+              reject(err);
+            }
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function setAddPreview(url, infoMessage = '') {
+      selectedAddPhotoUrl = url;
+      if (url) {
+        attachImage(memoryPreviewImg, url);
+        memoryPreviewImg.classList.remove('hidden');
+        memoryPreviewPlaceholder.classList.add('hidden');
+      } else {
+        memoryPreviewImg.classList.add('hidden');
+        memoryPreviewPlaceholder.classList.remove('hidden');
+      }
+
+      if (infoMessage) {
+        compressionInfoText.textContent = infoMessage;
+        compressionInfoText.classList.remove('hidden');
+      } else {
+        compressionInfoText.classList.add('hidden');
+      }
+    }
+
+    function renderSampleGrid() {
+      samplePhotosGrid.innerHTML = '';
+      SAMPLE_PHOTOS.forEach((sample) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        const active = selectedAddPhotoUrl === sample.url;
+        btn.className = `aspect-square rounded-xl overflow-hidden border-2 transition ${
+          active ? 'border-rose-500 ring-2 ring-rose-300' : 'border-slate-200 hover:border-slate-300'
+        }`;
+        const img = document.createElement('img');
+        img.alt = sample.label;
+        img.className = 'w-full h-full object-cover';
+        attachImage(img, sample.url);
+        btn.appendChild(img);
+        btn.addEventListener('click', () => {
+          memoryFileInput.value = '';
+          setAddPreview(sample.url, '');
+          renderSampleGrid();
+        });
+        samplePhotosGrid.appendChild(btn);
+      });
+    }
+
+    function openAddMemoryModal() {
+      closeDropdown();
+      memoryDateInput.value = new Date().toISOString().split('T')[0];
+      memoryLocationInput.value = '';
+      memoryNoteInput.value = '';
+      memoryFileInput.value = '';
+      renderSampleGrid();
+      setAddPreview(SAMPLE_PHOTOS[0].url, '');
+      addMemoryModal.classList.remove('hidden');
+    }
+
+    function closeAddMemoryModal() {
+      addMemoryModal.classList.add('hidden');
+    }
+
+    openAddMemoryBtn.addEventListener('click', openAddMemoryModal);
+    closeAddMemoryBtn.addEventListener('click', closeAddMemoryModal);
+    addMemoryModal.addEventListener('click', (e) => {
+      if (e.target === addMemoryModal) closeAddMemoryModal();
+    });
+
+    memoryFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      try {
+        const res = await compressImageToWebP(file, 1280, 0.8);
+        setAddPreview(
+          res.dataUrl,
+          `WebP: ${formatBytes(res.originalBytes)} → ~${formatBytes(res.approxBytes)} (${res.savedPct}% ahorrado)`
+        );
+        renderSampleGrid();
+      } catch (err) {
+        console.error(err);
+        showToast('No se pudo comprimir la imagen seleccionada.', 'error');
+      }
+    });
+
+    addMemoryForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const dateVal = memoryDateInput.value || new Date().toISOString().split('T')[0];
+      const locVal = memoryLocationInput.value.trim();
+      const noteVal = memoryNoteInput.value.trim();
+      const photoUrl = selectedAddPhotoUrl || SAMPLE_PHOTOS[0].url;
+
+      if (!locVal || !noteVal) {
+        showToast('Completa la ubicación y la nota.', 'error');
+        return;
+      }
+
+      const albumKey = formatAlbumKeyFromDate(dateVal);
+      ensureAlbum(albumKey, photoUrl);
+
+      state.memories.unshift({
+        id: `mem-${Date.now()}`,
+        albumKey,
+        date: dateVal,
+        location: locVal,
+        note: noteVal,
+        photo: photoUrl
+      });
+
+      saveState();
+      renderFeed();
+      closeAddMemoryModal();
+      showToast(`Añadido a "${state.albums[albumKey].name}".`);
+    });
+
+    // 4. MODAL DETALLE
+    const detailModal = document.getElementById('detailModal');
+    const closeDetailBtn = document.getElementById('closeDetailBtn');
+    const detailPhotoImg = document.getElementById('detailPhotoImg');
+    const detailLocationText = document.getElementById('detailLocationText');
+    const detailAlbumLabel = document.getElementById('detailAlbumLabel');
+    const detailDateText = document.getElementById('detailDateText');
+    const detailNoteText = document.getElementById('detailNoteText');
+
+    function openDetailModal(mem) {
+      attachImage(detailPhotoImg, mem.photo);
+      detailLocationText.textContent = mem.location;
+      const meta = state.albums[mem.albumKey];
+      detailAlbumLabel.textContent = meta ? `${meta.emoji || ''} ${meta.name}` : mem.albumKey;
+      detailDateText.textContent = mem.date || '';
+      detailNoteText.textContent = mem.note;
+      detailModal.classList.remove('hidden');
+    }
+
+    function closeDetailModal() {
+      detailModal.classList.add('hidden');
+    }
+
+    closeDetailBtn.addEventListener('click', closeDetailModal);
+    detailModal.addEventListener('click', (e) => {
+      if (e.target === detailModal) closeDetailModal();
+    });
+
+    // 5. EDITOR DE COLLAGES PERSONALIZABLE
+    const collageModal = document.getElementById('collageModal');
+    const openCollageMenuBtn = document.getElementById('openCollageMenuBtn');
+    const closeCollageBtn = document.getElementById('closeCollageBtn');
+    const collageSelectedCount = document.getElementById('collageSelectedCount');
+    const collageCanvasStage = document.getElementById('collageCanvasStage');
+    const collagePatternLayer = document.getElementById('collagePatternLayer');
+    const collagePhotosLayer = document.getElementById('collagePhotosLayer');
+    const collageTextOverlay = document.getElementById('collageTextOverlay');
+    const collageEmptyHint = document.getElementById('collageEmptyHint');
+    const collagePhotosPicker = document.getElementById('collagePhotosPicker');
+    const collageLayoutSelect = document.getElementById('collageLayoutSelect');
+    const collageOverlayTextInput = document.getElementById('collageOverlayTextInput');
+    const collageFontSelect = document.getElementById('collageFontSelect');
+    const collageAlignSelect = document.getElementById('collageAlignSelect');
+    const collageTextColorInput = document.getElementById('collageTextColorInput');
+    const collageFontSizeRange = document.getElementById('collageFontSizeRange');
+    const collageFontSizeLabel = document.getElementById('collageFontSizeLabel');
+    const collageBgStyleSelect = document.getElementById('collageBgStyleSelect');
+    const collagePatternSelect = document.getElementById('collagePatternSelect');
+    const collageGapRange = document.getElementById('collageGapRange');
+    const collageGapLabel = document.getElementById('collageGapLabel');
+    const collageRadiusRange = document.getElementById('collageRadiusRange');
+    const collageRadiusLabel = document.getElementById('collageRadiusLabel');
+    const collageFrameColorInput = document.getElementById('collageFrameColorInput');
+    const collageLocationInput = document.getElementById('collageLocationInput');
+    const collageNoteInput = document.getElementById('collageNoteInput');
+    const saveCollageBtn = document.getElementById('saveCollageBtn');
+
+    function openCollageModal() {
+      closeDropdown();
+      selectedCollageIds = state.memories.slice(0, Math.min(2, state.memories.length)).map((m) => m.id);
+      collageLayoutSelect.value = 'grid-2x2';
+      collageOverlayTextInput.value = '';
+      collageFontSelect.value = 'handwriting';
+      collageAlignSelect.value = 'center';
+      collageTextColorInput.value = '#ffffff';
+      collageFontSizeRange.value = '22';
+      collageBgStyleSelect.value = 'grad-romantic';
+      collagePatternSelect.value = 'none';
+      collageGapRange.value = '8';
+      collageRadiusRange.value = '12';
+      collageFrameColorInput.value = '#ffffff';
+      collageLocationInput.value = 'Collage Especial';
+      collageNoteInput.value = '';
+
+      renderCollagePicker();
+      renderCollageLivePreview();
+      collageModal.classList.remove('hidden');
+    }
+
+    function closeCollageModal() {
+      collageModal.classList.add('hidden');
+    }
+
+    openCollageMenuBtn.addEventListener('click', openCollageModal);
+    closeCollageBtn.addEventListener('click', closeCollageModal);
+    collageModal.addEventListener('click', (e) => {
+      if (e.target === collageModal) closeCollageModal();
+    });
+
+    function renderCollagePicker() {
+      collagePhotosPicker.innerHTML = '';
+      if (state.memories.length === 0) {
+        collagePhotosPicker.innerHTML = '<p class="col-span-4 text-xs text-slate-400 text-center py-4">Añade recuerdos primero.</p>';
+        return;
+      }
+
+      state.memories.forEach((m) => {
+        const idx = selectedCollageIds.indexOf(m.id);
+        const isSel = idx !== -1;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `relative aspect-square rounded-xl overflow-hidden border-2 transition ${
+          isSel ? 'border-rose-500 ring-2 ring-rose-300' : 'border-slate-200 opacity-80 hover:opacity-100'
+        }`;
+
+        const img = document.createElement('img');
+        img.alt = m.location;
+        img.className = 'w-full h-full object-cover';
+        attachImage(img, m.photo);
+
+        const badge = document.createElement('span');
+        badge.className = `absolute top-1 right-1 w-5 h-5 rounded-full text-[10px] font-extrabold flex items-center justify-center ${
+          isSel ? 'bg-rose-600 text-white' : 'bg-white/85 text-slate-600'
+        }`;
+        badge.textContent = isSel ? String(idx + 1) : '+';
+
+        btn.appendChild(img);
+        btn.appendChild(badge);
+
+        btn.addEventListener('click', () => {
+          if (isSel) {
+            selectedCollageIds = selectedCollageIds.filter((id) => id !== m.id);
+          } else {
+            selectedCollageIds.push(m.id);
+          }
+          renderCollagePicker();
+          renderCollageLivePreview();
+        });
+
+        collagePhotosPicker.appendChild(btn);
+      });
+    }
+
+    function getCollageConfig() {
+      const gap = parseInt(collageGapRange.value, 10) || 0;
+      const radius = parseInt(collageRadiusRange.value, 10) || 0;
+      const fontSize = parseInt(collageFontSizeRange.value, 10) || 22;
+      return {
+        layout: collageLayoutSelect.value,
+        text: collageOverlayTextInput.value,
+        font: collageFontSelect.value,
+        align: collageAlignSelect.value,
+        textColor: collageTextColorInput.value,
+        fontSize,
+        bgStyle: collageBgStyleSelect.value,
+        pattern: collagePatternSelect.value,
+        gap,
+        radius,
+        frameColor: collageFrameColorInput.value
+      };
+    }
+
+    function getFontClass(fontKey) {
+      if (fontKey === 'handwriting') return 'font-handwriting';
+      if (fontKey === 'serif') return 'font-serif-display';
+      return 'font-sans';
+    }
+
+    function getCanvasFontFamily(fontKey) {
+      if (fontKey === 'handwriting') return '"Caveat", cursive';
+      if (fontKey === 'serif') return '"Playfair Display", Georgia, serif';
+      return '"Inter", sans-serif';
+    }
+
+    function renderCollageLivePreview() {
+      const cfg = getCollageConfig();
+      collageGapLabel.textContent = `${cfg.gap}px`;
+      collageRadiusLabel.textContent = `${cfg.radius}px`;
+      collageFontSizeLabel.textContent = `${cfg.fontSize}px`;
+
+      const count = selectedCollageIds.length;
+      collageSelectedCount.textContent = `${count} ${count === 1 ? 'foto' : 'fotos'}`;
+
+      const valid = count >= 2;
+      saveCollageBtn.disabled = !valid;
+      saveCollageBtn.className = valid
+        ? 'w-full py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-md transition cursor-pointer'
+        : 'w-full py-3 rounded-2xl bg-slate-300 text-white font-bold text-sm transition cursor-not-allowed';
+
+      // Fondo y patrón
+      const bgPreset = BG_PRESETS[cfg.bgStyle] || BG_PRESETS['grad-romantic'];
+      collageCanvasStage.style.background = bgPreset.css;
+
+      collagePatternLayer.className = 'pointer-events-none absolute inset-0 z-10';
+      if (cfg.pattern === 'hearts') collagePatternLayer.classList.add('pattern-hearts');
+      else if (cfg.pattern === 'stars') collagePatternLayer.classList.add('pattern-stars');
+      else if (cfg.pattern === 'dots') collagePatternLayer.classList.add('pattern-dots');
+
+      // Texto superpuesto
+      const trimmedText = cfg.text.trim();
+      if (trimmedText) {
+        collageTextOverlay.classList.remove('hidden');
+        collageTextOverlay.className = `pointer-events-none absolute inset-x-0 bottom-3 z-20 px-4 py-1.5 transition-all ${getFontClass(cfg.font)}`;
+        collageTextOverlay.style.color = cfg.textColor;
+        collageTextOverlay.style.fontSize = `${cfg.fontSize}px`;
+        collageTextOverlay.style.textAlign = cfg.align;
+        collageTextOverlay.style.textShadow = '0 2px 10px rgba(15,23,42,0.65)';
+        collageTextOverlay.textContent = trimmedText;
+      } else {
+        collageTextOverlay.classList.add('hidden');
+        collageTextOverlay.textContent = '';
+      }
+
+      if (count === 0) {
+        collageEmptyHint.classList.remove('hidden');
+        collagePhotosLayer.innerHTML = '';
+        return;
+      }
+
+      collageEmptyHint.classList.add('hidden');
+      const chosen = selectedCollageIds
+        .map((id) => state.memories.find((m) => m.id === id))
+        .filter(Boolean);
+
+      collagePhotosLayer.innerHTML = '';
+      collagePhotosLayer.style.padding = `${Math.max(6, cfg.gap)}px`;
+
+      if (cfg.layout === 'scrapbook-free') {
+        collagePhotosLayer.className = 'relative z-0 w-full h-full';
+        const placements = [
+          { top: '6%', left: '6%', w: '46%', h: '44%', rot: '-4deg' },
+          { top: '10%', right: '6%', w: '44%', h: '42%', rot: '4deg' },
+          { bottom: '12%', left: '10%', w: '44%', h: '38%', rot: '3deg' },
+          { bottom: '10%', right: '9%', w: '42%', h: '38%', rot: '-3deg' }
+        ];
+        chosen.slice(0, 6).forEach((mem, i) => {
+          const p = placements[i % placements.length];
+          const box = document.createElement('div');
+          box.className = 'absolute overflow-hidden shadow-lg';
+          box.style.top = p.top || 'auto';
+          box.style.bottom = p.bottom || 'auto';
+          box.style.left = p.left || 'auto';
+          box.style.right = p.right || 'auto';
+          box.style.width = p.w;
+          box.style.height = p.h;
+          box.style.transform = `rotate(${p.rot})`;
+          box.style.borderRadius = `${cfg.radius}px`;
+          box.style.border = `3px solid ${cfg.frameColor}`;
+          const img = document.createElement('img');
+          img.alt = mem.location;
+          img.className = 'w-full h-full object-cover';
+          attachImage(img, mem.photo);
+          box.appendChild(img);
+          collagePhotosLayer.appendChild(box);
+        });
+        return;
+      }
+
+      if (cfg.layout === 'polaroid-tape') {
+        collagePhotosLayer.className = 'relative z-0 w-full h-full grid grid-cols-2 content-center';
+        collagePhotosLayer.style.gap = `${cfg.gap}px`;
+        chosen.slice(0, 4).forEach((mem, i) => {
+          const frame = document.createElement('div');
+          frame.className = 'relative p-1.5 pb-4 shadow-md';
+          frame.style.backgroundColor = cfg.frameColor;
+          frame.style.borderRadius = `${Math.max(4, cfg.radius - 4)}px`;
+          frame.style.transform = `rotate(${i % 2 === 0 ? '-2.5deg' : '2.5deg'})`;
+
+          const tape = document.createElement('div');
+          tape.className = 'mx-auto -mt-3 mb-1 w-10 h-3 rounded-sm bg-amber-200/85 border border-amber-300/60';
+
+          const imgBox = document.createElement('div');
+          imgBox.className = 'w-full aspect-square overflow-hidden bg-slate-100';
+          imgBox.style.borderRadius = `${Math.max(2, cfg.radius - 6)}px`;
+          const img = document.createElement('img');
+          img.alt = mem.location;
+          img.className = 'w-full h-full object-cover';
+          attachImage(img, mem.photo);
+
+          imgBox.appendChild(img);
+          frame.appendChild(tape);
+          frame.appendChild(imgBox);
+          collagePhotosLayer.appendChild(frame);
+        });
+        return;
+      }
+
+      if (cfg.layout === 'magazine-3') {
+        collagePhotosLayer.className = 'relative z-0 w-full h-full grid grid-cols-2 grid-rows-2';
+        collagePhotosLayer.style.gap = `${cfg.gap}px`;
+
+        const firstBox = document.createElement('div');
+        firstBox.className = 'row-span-2 overflow-hidden';
+        firstBox.style.borderRadius = `${cfg.radius}px`;
+        firstBox.style.border = `2px solid ${cfg.frameColor}`;
+        const firstImg = document.createElement('img');
+        firstImg.alt = chosen[0].location;
+        firstImg.className = 'w-full h-full object-cover';
+        attachImage(firstImg, chosen[0].photo);
+        firstBox.appendChild(firstImg);
+        collagePhotosLayer.appendChild(firstBox);
+
+        chosen.slice(1, 3).forEach((mem) => {
+          const box = document.createElement('div');
+          box.className = 'overflow-hidden';
+          box.style.borderRadius = `${cfg.radius}px`;
+          box.style.border = `2px solid ${cfg.frameColor}`;
+          const img = document.createElement('img');
+          img.alt = mem.location;
+          img.className = 'w-full h-full object-cover';
+          attachImage(img, mem.photo);
+          box.appendChild(img);
+          collagePhotosLayer.appendChild(box);
+        });
+        return;
+      }
+
+      // grid-2x2, col-1x2, row-1x2
+      collagePhotosLayer.className = 'relative z-0 w-full h-full grid';
+      collagePhotosLayer.style.gap = `${cfg.gap}px`;
+      if (cfg.layout === 'col-1x2') {
+        collagePhotosLayer.classList.add('grid-cols-1', 'grid-rows-2');
+      } else if (cfg.layout === 'row-1x2') {
+        collagePhotosLayer.classList.add('grid-cols-2', 'grid-rows-1');
+      } else {
+        collagePhotosLayer.classList.add('grid-cols-2', 'grid-rows-2');
+      }
+
+      chosen.forEach((mem) => {
+        const box = document.createElement('div');
+        box.className = 'w-full h-full overflow-hidden min-h-0';
+        box.style.borderRadius = `${cfg.radius}px`;
+        box.style.border = `2px solid ${cfg.frameColor}`;
+        const img = document.createElement('img');
+        img.alt = mem.location;
+        img.className = 'w-full h-full object-cover';
+        attachImage(img, mem.photo);
+        box.appendChild(img);
+        collagePhotosLayer.appendChild(box);
+      });
+    }
+
+    [
+      collageLayoutSelect,
+      collageOverlayTextInput,
+      collageFontSelect,
+      collageAlignSelect,
+      collageTextColorInput,
+      collageFontSizeRange,
+      collageBgStyleSelect,
+      collagePatternSelect,
+      collageGapRange,
+      collageRadiusRange,
+      collageFrameColorInput
+    ].forEach((ctrl) => {
+      ctrl.addEventListener('input', renderCollageLivePreview);
+      ctrl.addEventListener('change', renderCollageLivePreview);
+    });
+
+    function drawCoverImage(ctx, img, x, y, w, h) {
+      if (!img || !img.complete || img.naturalWidth === 0) {
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(x, y, w, h);
+        return;
+      }
+      const imgRatio = img.naturalWidth / img.naturalHeight;
+      const boxRatio = w / h;
+      let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+      if (imgRatio > boxRatio) {
+        sw = img.naturalHeight * boxRatio;
+        sx = (img.naturalWidth - sw) / 2;
+      } else {
+        sh = img.naturalWidth / boxRatio;
+        sy = (img.naturalHeight - sh) / 2;
+      }
+      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+    }
+
+    function loadImageForCanvas(url) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = url;
+      });
+    }
+
+    async function renderCollageToDataUrl(chosenMemories, cfg) {
+      const size = 900;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      const preset = BG_PRESETS[cfg.bgStyle] || BG_PRESETS['grad-romantic'];
+      if (preset.canvasGrad) {
+        const grad = ctx.createLinearGradient(0, 0, size, size);
+        grad.addColorStop(0, preset.canvasGrad[0]);
+        grad.addColorStop(1, preset.canvasGrad[1]);
+        ctx.fillStyle = grad;
+      } else {
+        ctx.fillStyle = preset.canvasFill || '#ffffff';
+      }
+      ctx.fillRect(0, 0, size, size);
+
+      if (cfg.pattern !== 'none') {
+        ctx.save();
+        ctx.fillStyle = cfg.pattern === 'stars' ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.2)';
+        const step = 36;
+        for (let y = 18; y < size; y += step) {
+          for (let x = 18; x < size; x += step) {
+            ctx.beginPath();
+            ctx.arc(x, y, cfg.pattern === 'dots' ? 3 : 4.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.restore();
+      }
+
+      const loadedImgs = await Promise.all(chosenMemories.map((m) => loadImageForCanvas(m.photo)));
+      const scale = size / 400;
+      const pad = Math.max(8, cfg.gap) * scale;
+      const gap = cfg.gap * scale;
+      const radius = cfg.radius * scale;
+      const inner = size - pad * 2;
+
+      const drawRoundedPhoto = (img, x, y, w, h) => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, radius);
+        ctx.clip();
+        drawCoverImage(ctx, img, x, y, w, h);
+        ctx.restore();
+        if (radius > 0) {
+          ctx.save();
+          ctx.strokeStyle = cfg.frameColor;
+          ctx.lineWidth = Math.max(2, 2.5 * scale);
+          ctx.beginPath();
+          ctx.roundRect(x, y, w, h, radius);
+          ctx.stroke();
+          ctx.restore();
+        }
+      };
+
+      if (cfg.layout === 'scrapbook-free') {
+        const rects = [
+          { x: pad, y: pad, w: inner * 0.48, h: inner * 0.44 },
+          { x: pad + inner * 0.52, y: pad + inner * 0.04, w: inner * 0.48, h: inner * 0.42 },
+          { x: pad + inner * 0.04, y: pad + inner * 0.52, w: inner * 0.46, h: inner * 0.42 },
+          { x: pad + inner * 0.52, y: pad + inner * 0.5, w: inner * 0.46, h: inner * 0.44 }
+        ];
+        loadedImgs.slice(0, 4).forEach((img, idx) => {
+          const r = rects[idx % rects.length];
+          drawRoundedPhoto(img, r.x, r.y, r.w, r.h);
+        });
+      } else if (cfg.layout === 'magazine-3') {
+        const leftW = (inner - gap) / 2;
+        drawRoundedPhoto(loadedImgs[0], pad, pad, leftW, inner);
+        const rightX = pad + leftW + gap;
+        const rightH = (inner - gap) / 2;
+        if (loadedImgs[1]) drawRoundedPhoto(loadedImgs[1], rightX, pad, leftW, rightH);
+        if (loadedImgs[2]) drawRoundedPhoto(loadedImgs[2], rightX, pad + rightH + gap, leftW, rightH);
+      } else {
+        const count = loadedImgs.length;
+        const cols = cfg.layout === 'col-1x2' ? 1 : 2;
+        const rows = cfg.layout === 'row-1x2' ? 1 : Math.max(2, Math.ceil(count / cols));
+        const cellW = (inner - gap * (cols - 1)) / cols;
+        const cellH = (inner - gap * (rows - 1)) / rows;
+
+        loadedImgs.forEach((img, idx) => {
+          const r = Math.floor(idx / cols);
+          const c = idx % cols;
+          drawRoundedPhoto(img, pad + c * (cellW + gap), pad + r * (cellH + gap), cellW, cellH);
+        });
+      }
+
+      const textVal = cfg.text.trim();
+      if (textVal) {
+        ctx.save();
+        const pxSize = Math.round(cfg.fontSize * scale * 0.85);
+        ctx.font = `700 ${pxSize}px ${getCanvasFontFamily(cfg.font)}`;
+        ctx.fillStyle = cfg.textColor;
+        ctx.shadowColor = 'rgba(15, 23, 42, 0.75)';
+        ctx.shadowBlur = 12;
+        let xPos = size / 2;
+        ctx.textAlign = 'center';
+        if (cfg.align === 'left') {
+          xPos = pad + 16;
+          ctx.textAlign = 'left';
+        } else if (cfg.align === 'right') {
+          xPos = size - pad - 16;
+          ctx.textAlign = 'right';
+        }
+        ctx.fillText(textVal, xPos, size - pad - 18);
+        ctx.restore();
+      }
+
+      try {
+        return canvas.toDataURL('image/jpeg', 0.86);
+      } catch (err) {
+        return chosenMemories[0].photo;
+      }
+    }
+
+    saveCollageBtn.addEventListener('click', async () => {
+      if (selectedCollageIds.length < 2) return;
+      const chosen = selectedCollageIds
+        .map((id) => state.memories.find((m) => m.id === id))
+        .filter(Boolean);
+      if (chosen.length < 2) return;
+
+      const cfg = getCollageConfig();
+      const imageUrl = await renderCollageToDataUrl(chosen, cfg);
+      const todayStr = new Date().toISOString().split('T')[0];
+      const albumKey = formatAlbumKeyFromDate(todayStr);
+      const locVal = collageLocationInput.value.trim() || 'Collage Especial';
+      const noteVal = collageNoteInput.value.trim() || cfg.text.trim() || `Collage con ${chosen.length} recuerdos.`;
+
+      ensureAlbum(albumKey, imageUrl);
+      state.memories.unshift({
+        id: `mem-collage-${Date.now()}`,
+        albumKey,
+        date: todayStr,
+        location: locVal,
+        note: noteVal,
+        photo: imageUrl
+      });
+
+      saveState();
+      renderFeed();
+      closeCollageModal();
+      showToast(`Collage guardado en "${state.albums[albumKey].name}".`);
+    });
+
+    // 6. MODAL ORGANIZAR ÁLBUMES
+    const organizeModal = document.getElementById('organizeModal');
+    const openOrganizeMenuBtn = document.getElementById('openOrganizeMenuBtn');
+    const closeOrganizeBtn = document.getElementById('closeOrganizeBtn');
+    const organizeForm = document.getElementById('organizeForm');
+    const organizeAlbumSelect = document.getElementById('organizeAlbumSelect');
+    const organizeNameInput = document.getElementById('organizeNameInput');
+    const organizeColorSelect = document.getElementById('organizeColorSelect');
+    const organizeEmojiSelect = document.getElementById('organizeEmojiSelect');
+    const organizeDescInput = document.getElementById('organizeDescInput');
+    const organizeCoverPicker = document.getElementById('organizeCoverPicker');
+    const organizeFavoriteCheckbox = document.getElementById('organizeFavoriteCheckbox');
+
+    function openOrganizeModal() {
+      closeDropdown();
+      const keys = getAlbumKeys();
+      organizeAlbumSelect.innerHTML = '';
+
+      keys.forEach((key) => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = `${state.albums[key].emoji || '📷'} ${state.albums[key].name || key}`;
+        organizeAlbumSelect.appendChild(opt);
+      });
+
+      if (keys.length > 0) {
+        organizeAlbumSelect.value = keys[0];
+        populateOrganizeFields(keys[0]);
+      }
+
+      organizeModal.classList.remove('hidden');
+    }
+
+    function closeOrganizeModal() {
+      organizeModal.classList.add('hidden');
+    }
+
+    openOrganizeMenuBtn.addEventListener('click', openOrganizeModal);
+    closeOrganizeBtn.addEventListener('click', closeOrganizeModal);
+    organizeModal.addEventListener('click', (e) => {
+      if (e.target === organizeModal) closeOrganizeModal();
+    });
+
+    organizeAlbumSelect.addEventListener('change', (e) => {
+      populateOrganizeFields(e.target.value);
+    });
+
+    function populateOrganizeFields(key) {
+      ensureAlbum(key);
+      const meta = state.albums[key];
+      organizeNameInput.value = meta.name || key;
+      organizeColorSelect.value = meta.color || 'rose';
+      organizeEmojiSelect.value = meta.emoji || '📷';
+      organizeDescInput.value = meta.description || '';
+      organizeFavoriteCheckbox.checked = Boolean(meta.favorite);
+
+      const albumPhotos = state.memories.filter((m) => m.albumKey === key).map((m) => m.photo);
+      const candidates = Array.from(new Set([
+        ...albumPhotos,
+        meta.coverPhoto,
+        ...SAMPLE_PHOTOS.map((s) => s.url)
+      ].filter(Boolean)));
+
+      selectedOrganizeCoverUrl = meta.coverPhoto || candidates[0] || SAMPLE_PHOTOS[0].url;
+      renderCoverPicker(candidates);
+    }
+
+    function renderCoverPicker(urls) {
+      organizeCoverPicker.innerHTML = '';
+      urls.forEach((u) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        const active = selectedOrganizeCoverUrl === u;
+        btn.className = `aspect-square rounded-xl overflow-hidden border-2 transition ${
+          active ? 'border-rose-600 ring-2 ring-rose-300' : 'border-slate-200 opacity-80 hover:opacity-100'
+        }`;
+        const img = document.createElement('img');
+        img.alt = 'Portada';
+        img.className = 'w-full h-full object-cover';
+        attachImage(img, u);
+        btn.appendChild(img);
+        btn.addEventListener('click', () => {
+          selectedOrganizeCoverUrl = u;
+          renderCoverPicker(urls);
+        });
+        organizeCoverPicker.appendChild(btn);
+      });
+    }
+
+    organizeForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const key = organizeAlbumSelect.value;
+      if (!key) return;
+      ensureAlbum(key);
+
+      const updatedName = organizeNameInput.value.trim() || key;
+      state.albums[key] = {
+        ...state.albums[key],
+        name: updatedName,
+        color: organizeColorSelect.value,
+        emoji: organizeEmojiSelect.value,
+        description: organizeDescInput.value.trim(),
+        favorite: organizeFavoriteCheckbox.checked,
+        coverPhoto: selectedOrganizeCoverUrl || state.albums[key].coverPhoto
+      };
+
+      saveState();
+      renderFeed();
+      closeOrganizeModal();
+      showToast(`Álbum "${updatedName}" actualizado.`);
+    });
+
+    // Arranque
+    window.addEventListener('DOMContentLoaded', () => {
+      getAlbumKeys();
+      saveState();
+      renderFeed();
+    });
+  </script>
+</body>
+</html>
