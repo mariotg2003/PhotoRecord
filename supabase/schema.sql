@@ -130,7 +130,9 @@ begin
   if not public.is_member() then raise exception 'No autorizado'; end if;
   if p_amount <= 0 or p_type not in ('EARN', 'BONUS') then raise exception 'Puntos no válidos'; end if;
   update public.shared_points set total_points = total_points + p_amount, updated_at = now()
+    where id = (select id from public.shared_points limit 1)
     returning total_points into v_total;
+  if not found then raise exception 'No existe el saldo compartido'; end if;
   insert into public.point_transactions (user_id, amount, reason, type) values (auth.uid(), p_amount, p_reason, p_type);
   return v_total;
 end $$;
@@ -159,7 +161,10 @@ begin
   update public.rewards set status = 'COMPLETED', completed_at = now()
     where id = p_reward_id and status = 'PENDING' returning title into v_title;
   if not found then raise exception 'La recompensa no está pendiente'; end if;
-  update public.shared_points set total_points = total_points + 20, updated_at = now() returning total_points into v_total;
+  update public.shared_points set total_points = total_points + 20, updated_at = now()
+    where id = (select id from public.shared_points limit 1)
+    returning total_points into v_total;
+  if not found then raise exception 'No existe el saldo compartido'; end if;
   insert into public.point_transactions (user_id, amount, reason, type)
     values (auth.uid(), 20, 'Plan disfrutado: ' || v_title, 'BONUS');
   return v_total;
