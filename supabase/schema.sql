@@ -67,6 +67,114 @@ create policy "members upload photos" on storage.objects for insert to authentic
 create policy "members delete photos" on storage.objects for delete to authenticated
   using (bucket_id = 'photos' and public.is_member());
 
+-- 4b) Puntos y recompensas compartidas (un único bote para los dos)
+create table if not exists public.shared_points (
+  id uuid primary key default gen_random_uuid(),
+  total_points int not null default 0 check (total_points >= 0),
+  updated_at timestamptz not null default now()
+);
+-- Garantiza una sola fila de saldo
+create unique index if not exists shared_points_single_row on public.shared_points ((true));
+insert into public.shared_points (total_points) values (0) on conflict do nothing;
+
+create table if not exists public.point_transactions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users (id) on delete set null default auth.uid(),
+  amount int not null,
+  reason text not null,
+  type varchar(20) not null check (type in ('EARN', 'REDEEM', 'BONUS')),
+  created_at timestamptz not null default now()
+);
+create index if not exists point_transactions_created_idx on public.point_transactions (created_at desc);
+
+create table if not exists public.rewards (
+  id uuid primary key default gen_random_uuid(),
+  title varchar(150) not null,
+  description text,
+  points_cost int not null check (points_cost > 0),
+  tier int not null check (tier in (1, 2, 3)),
+  icon varchar(10) default '🎁',
+  status varchar(20) not null default 'AVAILABLE' check (status in ('AVAILABLE', 'PENDING', 'COMPLETED')),
+  redeemed_by uuid references auth.users (id) on delete set null,
+  redeemed_at timestamptz,
+  completed_at timestamptz
+);
+
+alter table public.shared_points enable row level security;
+alter table public.point_transactions enable row level security;
+alter table public.rewards enable row level security;
+
+-- Lectura para miembros; los saldos y canjes solo cambian mediante las funciones de abajo
+create policy "members read shared_points" on public.shared_points for select to authenticated using (public.is_member());
+create policy "members read point_transactions" on public.point_transactions for select to authenticated using (public.is_member());
+create policy "members read rewards" on public.rewards for select to authenticated using (public.is_member());
+create policy "members insert rewards" on public.rewards for insert to authenticated
+  with check (public.is_member() and status = 'AVAILABLE');
+grant select on public.shared_points, public.point_transactions, public.rewards to authenticated;
+grant insert on public.rewards to authenticated;
+
+create or replace function public.add_points(p_amount int, p_reason text, p_type text default 'EARN')
+returns int language plpgsql security definer set search_path = public as $$
+declare v_total int;
+begin
+  if not public.is_member() then raise exception 'No autorizado'; end if;
+  if p_amount <= 0 or p_type not in ('EARN', 'BONUS') then raise exception 'Puntos no válidos'; end if;
+  update public.shared_points set total_points = total_points + p_amount, updated_at = now()
+    returning total_points into v_total;
+  insert into public.point_transactions (user_id, amount, reason, type) values (auth.uid(), p_amount, p_reason, p_type);
+  return v_total;
+end $$;
+
+create or replace function public.redeem_reward(p_reward_id uuid)
+returns int language plpgsql security definer set search_path = public as $$
+declare v_reward public.rewards; v_total int;
+begin
+  if not public.is_member() then raise exception 'No autorizado'; end if;
+  select * into v_reward from public.rewards where id = p_reward_id and status = 'AVAILABLE' for update;
+  if not found then raise exception 'La recompensa ya no está disponible'; end if;
+  update public.shared_points set total_points = total_points - v_reward.points_cost, updated_at = now()
+    where total_points >= v_reward.points_cost returning total_points into v_total;
+  if not found then raise exception 'Puntos insuficientes'; end if;
+  update public.rewards set status = 'PENDING', redeemed_by = auth.uid(), redeemed_at = now() where id = p_reward_id;
+  insert into public.point_transactions (user_id, amount, reason, type)
+    values (auth.uid(), -v_reward.points_cost, 'Canje: ' || v_reward.title, 'REDEEM');
+  return v_total;
+end $$;
+
+create or replace function public.complete_reward(p_reward_id uuid)
+returns int language plpgsql security definer set search_path = public as $$
+declare v_title text; v_total int;
+begin
+  if not public.is_member() then raise exception 'No autorizado'; end if;
+  update public.rewards set status = 'COMPLETED', completed_at = now()
+    where id = p_reward_id and status = 'PENDING' returning title into v_title;
+  if not found then raise exception 'La recompensa no está pendiente'; end if;
+  update public.shared_points set total_points = total_points + 20, updated_at = now() returning total_points into v_total;
+  insert into public.point_transactions (user_id, amount, reason, type)
+    values (auth.uid(), 20, 'Plan disfrutado: ' || v_title, 'BONUS');
+  return v_total;
+end $$;
+
+grant execute on function public.add_points(int, text, text), public.redeem_reward(uuid), public.complete_reward(uuid) to authenticated;
+
+-- Catálogo inicial
+insert into public.rewards (title, description, points_cost, tier, icon)
+select * from (values
+  ('Maratón de pelis/serie', 'Noche de cine casero con picoteo.', 50, 1, '🎬'),
+  ('Desayuno o merienda especial', 'Café o tostada con calma, juntos.', 75, 1, '☕'),
+  ('Salida a por helado', 'Vuestra heladería o pastelería favorita.', 100, 1, '🍨'),
+  ('Tarde de DJ y cocina', 'Cocinar juntos con vuestra lista de música.', 125, 1, '🎵'),
+  ('Noche de juegos de mesa', 'Partida en casa con snacks y copas.', 150, 1, '🎲'),
+  ('Cena casera gourmet', 'Receta elaborada preparada entre los dos.', 250, 2, '🍝'),
+  ('Cena y cócteles fuera', 'Tapas o copas en un sitio especial.', 350, 2, '🍹'),
+  ('Escapada o picnic de día completo', 'Un día en el campo o en un pueblo cercano.', 450, 2, '🌲'),
+  ('Visita cultural', 'Museo o exposición nuevos.', 500, 2, '🏛️'),
+  ('Cena en restaurante especial', 'Ese sitio pendiente de probar.', 800, 3, '🍷'),
+  ('Escapada de fin de semana', 'Noche en casa rural o hotel con encanto.', 1200, 3, '🏨'),
+  ('Entradas a concierto o teatro', 'Un espectáculo juntos.', 1500, 3, '🎟️')
+) as v(title, description, points_cost, tier, icon)
+where not exists (select 1 from public.rewards);
+
 -- 5) Después de crear los dos usuarios, añádelos (sustituye los correos):
 -- insert into public.members (user_id, display_name)
 -- select id, split_part(email, '@', 1) from auth.users where email in ('tu@correo.com', 'pareja@correo.com');

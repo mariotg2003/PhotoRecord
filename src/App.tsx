@@ -4,6 +4,9 @@ import CollageEditor from "./components/CollageEditor";
 import MemoryImage from "./components/MemoryImage";
 import Modal from "./components/Modal";
 import OrganizeAlbum from "./components/OrganizeAlbum";
+import PointsBadgeHeader from "./components/PointsBadgeHeader";
+import RewardsModal from "./components/RewardsModal";
+import { POINTS, type PointsService } from "./data/pointsService";
 import { addMemory, monthName, orderedAlbums } from "./data/domain";
 import { repository, type PhotoRecordRepository } from "./data/repository";
 import { samples } from "./data/samples";
@@ -11,14 +14,15 @@ import type { Album, AlbumWithMemories, Memory, PhotoRecordState } from "./types
 
 const emptyState: PhotoRecordState = { albums: {}, memories: [] };
 
-export default function App({ storage = repository, onSignOut }: { storage?: PhotoRecordRepository; onSignOut?: () => void }) {
+export default function App({ storage = repository, points, onSignOut }: { storage?: PhotoRecordRepository; points?: PointsService; onSignOut?: () => void }) {
+  const [balance, setBalance] = useState<number | null>(null);
   const [data, setData] = useState<PhotoRecordState>(emptyState);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [busy, setBusy] = useState(false);
   const saving = useRef(false);
   const [screen, setScreen] = useState<"home" | "albums">("home");
-  const [modal, setModal] = useState<"add" | "collage" | null>(null);
+  const [modal, setModal] = useState<"add" | "collage" | "rewards" | null>(null);
   const [detail, setDetail] = useState<Memory | null>(null);
   const [editing, setEditing] = useState<AlbumWithMemories | null>(null);
   const albums = useMemo(() => orderedAlbums(data), [data]);
@@ -33,13 +37,27 @@ export default function App({ storage = repository, onSignOut }: { storage?: Pho
     return () => { active = false; };
   }, [storage]);
 
+  useEffect(() => {
+    if (!points) return;
+    let active = true;
+    points.getBalance().then((value) => { if (active) setBalance(value); }).catch(() => undefined);
+    return () => { active = false; };
+  }, [points]);
+
   async function persist(next: PhotoRecordState) {
     if (saving.current) throw new Error("Ya hay un guardado en curso.");
     saving.current = true; setBusy(true);
     try { await storage.save(next); setData(next); }
     finally { saving.current = false; setBusy(false); }
   }
-  async function saveMemory(memory: Memory) { await persist(addMemory(data, memory)); }
+  async function saveMemory(memory: Memory) {
+    await persist(addMemory(data, memory));
+    if (!points) return;
+    // El recuerdo ya está guardado: un fallo al sumar puntos no debe hacerlo fallar.
+    try {
+      setBalance(await points.earn(memory.collage ? POINTS.COLLAGE : POINTS.MEMORY, memory.collage ? "Collage creado" : "Recuerdo guardado"));
+    } catch { /* se reintentará al refrescar el saldo */ }
+  }
   async function saveAlbum(album: Album) { await persist({ ...data, albums: { ...data.albums, [album.id]: album } }); }
   const ready = !loading && !loadError;
 
@@ -48,6 +66,7 @@ export default function App({ storage = repository, onSignOut }: { storage?: Pho
       <header className="pr-header">
         <div className="pr-brand-icon" aria-hidden="true">▣</div>
         <div className="pr-brand"><strong>PhotoRecord</strong><small>TU DIARIO DE MOMENTOS</small></div>
+        {points && <PointsBadgeHeader service={points} balance={balance} onOpenRewards={() => setModal("rewards")} />}
         <button type="button" className="pr-icon-button" aria-label="Crear collage" disabled={!ready} onClick={() => setModal("collage")}>✧</button>
         {onSignOut && <button type="button" className="pr-icon-button" aria-label="Cerrar sesión" onClick={onSignOut}>⏻</button>}
       </header>
@@ -95,6 +114,7 @@ export default function App({ storage = repository, onSignOut }: { storage?: Pho
       </nav>
       {modal === "add" && <AddMemory busy={busy} onClose={() => setModal(null)} onSave={saveMemory} />}
       {modal === "collage" && <CollageEditor busy={busy} onClose={() => setModal(null)} memories={data.memories} onSave={saveMemory} />}
+      {modal === "rewards" && points && <RewardsModal service={points} balance={balance} onBalance={setBalance} onClose={() => setModal(null)} />}
       {editing && <OrganizeAlbum album={editing} memories={data.memories} busy={busy} onClose={() => setEditing(null)} onSave={saveAlbum} />}
       {detail && <Modal title="Un momento especial" subtitle={monthName(detail.date.slice(0, 7))} onClose={() => setDetail(null)}>
         <div className="pr-detail"><MemoryImage memory={detail} memories={data.memories} className="pr-detail-image" /><h3>⌖ {detail.location}</h3><p className="pr-helper">{detail.date.split("-").reverse().join(" / ")}</p><p>{detail.note}</p></div>

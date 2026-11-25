@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import App from "../App";
+import { createPointsService } from "../data/pointsService";
 import { supabase } from "../data/supabase";
 import { createSupabaseRepository } from "../data/supabaseRepository";
 
@@ -44,9 +45,11 @@ export default function AuthGate() {
 
   const userId = session?.user.id;
   const storage = useMemo(() => (supabase && userId ? createSupabaseRepository(supabase) : null), [userId]);
+
+  const points = useMemo(() => (supabase && userId ? createPointsService(supabase) : null), [userId]);
 
   if (!supabase) return <div className="photorecord pr-login"><p className="pr-error" role="alert">Faltan VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en el archivo .env.</p></div>;
   if (session === undefined) return <div className="photorecord pr-login"><p className="pr-helper">Cargando...</p></div>;
-  if (!storage) return <Login />;
-  return <App storage={storage} onSignOut={() => void supabase!.auth.signOut()} />;
+  if (!storage || !points) return <Login />;
+  return <App storage={storage} points={points}  onSignOut={() => void supabase!.auth.signOut()} />;
 }
