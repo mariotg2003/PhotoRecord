@@ -42,7 +42,7 @@ La aplicación todavía **no está integrada** en WorkPanel de escritorio ni en 
 1. En Supabase: Authentication > Providers > Email, desactiva el registro libre y crea los dos usuarios a mano.
 2. Ejecuta [supabase/schema.sql](./supabase/schema.sql) en el SQL Editor y añade los dos usuarios a `members` (último bloque del archivo).
    El archivo se puede volver a ejecutar sin borrar datos: restablece las políticas que define y crea las tablas que falten. No modifica la estructura de tablas que ya existan.
-3. Copia `.env.example` a `.env` con la URL del proyecto y la clave `anon` (Project Settings > API). Nunca pongas la contraseña de la base de datos ni la `service_role` en el frontend.
+3. Copia `.env.example` a `.env` y rellena `suprl` con la URL del proyecto y `sup` con la clave `anon` (Project Settings > API). Nunca pongas la contraseña de la base de datos ni la `service_role` en el frontend.
 4. Las fotos se convierten a WebP en el navegador (máx. 1000 px) y se guardan en el bucket privado `photos`.
 
 El indicador de puntos abre el historial y una guía de las acciones disponibles: guardar un recuerdo (+10), guardar un collage de 2 a 4 fotos (+15, sin sumar también los puntos del recuerdo) y completar un plan canjeado (+20). Ambos usuarios contribuyen al mismo saldo; los canjes descuentan su coste de ese saldo.
